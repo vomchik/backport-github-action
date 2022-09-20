@@ -1,6 +1,7 @@
 /* eslint-disable no-console */
 import * as core from '@actions/core';
 import { context } from '@actions/github';
+import { BackportResponse } from 'backport';
 import { getFailureMessage, run } from './run';
 
 run({
@@ -17,8 +18,19 @@ run({
     }),
   },
 })
-  .then((res) => {
+  .then((res: BackportResponse) => {
     core.setOutput('Result', res);
+
+    if (res.status === 'success') {
+      core.setOutput(
+        'prIds',
+        res.results
+          .filter((r) => r.status === 'success')
+          .map((r) => r.status === 'success' && r.pullRequestNumber)
+          .filter(Boolean)
+      );
+    }
+
     const failureMessage = getFailureMessage(res);
     if (failureMessage) {
       core.setFailed(failureMessage);
